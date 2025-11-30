@@ -1,0 +1,1 @@
+start "DeadZone-Server" cmd /k ".\gradlew.bat run"

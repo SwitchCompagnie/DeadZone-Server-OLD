@@ -1,0 +1,51 @@
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+static/index.html
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Others ###
+tlsdz_schema/docs-generated/
+tlsdz_schema/outpy/
+tlsdz_schema/outkt/
+tlsdz_schema/sidebar.js
+logs/
+.kotlin
+data/db/
+deploy/
+src/main/dump.py
+src/main/dump.txt
+src/main/server.txt
+src/main/resources/application.yaml
