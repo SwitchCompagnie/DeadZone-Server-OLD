@@ -3,38 +3,73 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Traits\AuthenticatesWithGameApi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
+    use AuthenticatesWithGameApi;
+
+    /**
+     * Check if turnstile is enabled.
+     */
+    private function isTurnstileEnabled(): bool
+    {
+        return (bool) config('app.turnstile_enabled', env('TURNSTILE_ENABLED', false));
+    }
+
     private function redirectIfAuthenticated()
     {
         if (Auth::check()) {
             return redirect()->route('game.index');
         }
+
         return null;
     }
 
     private function validateTurnstileIfEnabled($token)
     {
-        if (!env('TURNSTILE_ENABLED', false)) {
-            return true;
+        return ! $this->isTurnstileEnabled() || $this->validateTurnstile($token);
+    }
+
+    /**
+     * Return error response (JSON or redirect with errors).
+     */
+    private function errorResponse(Request $request, string $key, string $message, int $statusCode = 422)
+    {
+        if ($request->wantsJson()) {
+            return response()->json(['errors' => [$key => [$message]]], $statusCode);
         }
 
-        return $this->validateTurnstile($token);
+        return back()->withErrors([$key => $message])->withInput();
+    }
+
+    /**
+     * Return success response (JSON or redirect).
+     */
+    private function successResponse(Request $request, string $token, string $redirectRoute, string $message)
+    {
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'token' => $token,
+                'redirect' => route($redirectRoute),
+            ]);
+        }
+
+        return redirect()->intended(route($redirectRoute))->with('status', $message);
     }
 
     public function showLoginForm()
     {
-        if ($redirect = $this->redirectIfAuthenticated()) {
-            return $redirect;
-        }
-
+        // Don't redirect from login page to avoid redirect loops
+        // when session state is inconsistent (e.g., expired session cookie).
+        // Let the user access the login page; if they're truly authenticated,
+        // they can navigate to /game directly.
         return view('welcome', [
             'maintenanceMode' => \App\Models\Setting::isMaintenanceMode(),
         ]);
@@ -49,60 +84,34 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'username' => 'required|string|min:6|regex:/^[a-zA-Z0-9]+$/',
             'password' => 'required|string|min:6',
-            'cf-turnstile-response' => env('TURNSTILE_ENABLED', false) ? 'required|string' : '',
+            'cf-turnstile-response' => $this->isTurnstileEnabled() ? 'required|string' : '',
         ]);
 
         if ($validator->fails()) {
-            if ($request->wantsJson()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-
-            return back()->withErrors($validator)->withInput();
+            return $request->wantsJson()
+                ? response()->json(['errors' => $validator->errors()], 422)
+                : back()->withErrors($validator)->withInput();
         }
 
-        if (!$this->validateTurnstileIfEnabled($request->input('cf-turnstile-response'))) {
-            if ($request->wantsJson()) {
-                return response()->json(['errors' => ['captcha' => ['Captcha validation failed.']]], 422);
-            }
-
-            return back()->withErrors(['captcha' => 'Captcha validation failed.'])->withInput();
+        if (! $this->validateTurnstileIfEnabled($request->input('cf-turnstile-response'))) {
+            return $this->errorResponse($request, 'captcha', 'Captcha validation failed.');
         }
 
-        $apiToken = $this->authenticateWithApiLogin($request->username, $request->password);
-
+        $apiToken = $this->authenticateWithGameApi($request->username, $request->password);
         if (! $apiToken) {
-            if ($request->wantsJson()) {
-                return response()->json(['errors' => ['login' => ['Invalid credentials or API error.']]], 401);
-            }
-
-            return back()->withErrors(['login' => 'Invalid credentials or API error.'])->withInput();
+            return $this->errorResponse($request, 'login', 'Invalid credentials or API error.', 401);
         }
 
         $user = User::where('name', $request->username)->first();
-
-        if (!$user) {
-            if ($request->wantsJson()) {
-                return response()->json(['errors' => ['login' => ['User not found. Please register first.']]], 401);
-            }
-
-            return back()->withErrors(['login' => 'User not found. Please register first.'])->withInput();
+        if (! $user) {
+            return $this->errorResponse($request, 'login', 'User not found. Please register first.', 401);
         }
 
         Auth::login($user, $request->boolean('remember-me'));
-
         $request->session()->regenerate();
-
         $request->session()->put('api_token', $apiToken);
 
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'token' => $apiToken,
-                'redirect' => route('game.index'),
-            ]);
-        }
-
-        return redirect()->intended(route('game.index'))->with('status', 'Logged in successfully!');
+        return $this->successResponse($request, $apiToken, 'game.index', 'Logged in successfully!');
     }
 
     public function register(Request $request)
@@ -115,40 +124,30 @@ class AuthController extends Controller
             'username' => 'required|string|min:6|regex:/^[a-zA-Z0-9]+$/',
             'email' => 'required|email|max:255',
             'password' => 'required|string|min:6',
-            'cf-turnstile-response' => env('TURNSTILE_ENABLED', false) ? 'required|string' : '',
+            'cf-turnstile-response' => $this->isTurnstileEnabled() ? 'required|string' : '',
         ]);
 
         if ($validator->fails()) {
-            if ($request->wantsJson()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-
-            return back()->withErrors($validator)->withInput();
+            return $request->wantsJson()
+                ? response()->json(['errors' => $validator->errors()], 422)
+                : back()->withErrors($validator)->withInput();
         }
 
-        if (!$this->validateTurnstileIfEnabled($request->input('cf-turnstile-response'))) {
-            if ($request->wantsJson()) {
-                return response()->json(['errors' => ['captcha' => ['Captcha validation failed.']]], 422);
-            }
-
-            return back()->withErrors(['captcha' => 'Captcha validation failed.'])->withInput();
+        if (! $this->validateTurnstileIfEnabled($request->input('cf-turnstile-response'))) {
+            return $this->errorResponse($request, 'captcha', 'Captcha validation failed.');
         }
 
         $countryCode = $this->getCountryCodeFromIp($request->ip());
-
-        $apiToken = $this->authenticateWithApiRegister(
+        $apiToken = $this->authenticateWithGameApi(
             $request->username,
             $request->password,
             $request->email,
-            $countryCode
+            $countryCode,
+            '/api/register'
         );
 
         if (! $apiToken) {
-            if ($request->wantsJson()) {
-                return response()->json(['errors' => ['register' => ['Registration failed. Username may already exist.']]], 409);
-            }
-
-            return back()->withErrors(['register' => 'Registration failed. Username may already exist.'])->withInput();
+            return $this->errorResponse($request, 'register', 'Registration failed. Username may already exist.', 409);
         }
 
         $user = User::firstOrCreate(
@@ -156,30 +155,20 @@ class AuthController extends Controller
             [
                 'email' => $request->email,
                 'password' => bcrypt($request->password),
-                'auth_token' => \Illuminate\Support\Str::random(64)
+                'auth_token' => \Illuminate\Support\Str::random(64),
             ]
         );
 
-        if ($user->wasRecentlyCreated || !$user->hasVerifiedEmail()) {
+        if ($user->wasRecentlyCreated || ! $user->hasVerifiedEmail()) {
             $code = $user->generateEmailVerificationCode();
             $user->notify(new \App\Notifications\EmailVerificationCode($code));
         }
 
         Auth::login($user, $request->boolean('remember-me'));
-
         $request->session()->regenerate();
-
         $request->session()->put('api_token', $apiToken);
 
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'token' => $apiToken,
-                'redirect' => route('game.index'),
-            ]);
-        }
-
-        return redirect()->intended(route('game.index'))->with('status', 'Account created successfully!');
+        return $this->successResponse($request, $apiToken, 'game.index', 'Account created successfully!');
     }
 
     public function showForgotPasswordForm()
@@ -195,14 +184,14 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
-            'cf-turnstile-response' => env('TURNSTILE_ENABLED', false) ? 'required|string' : '',
+            'cf-turnstile-response' => $this->isTurnstileEnabled() ? 'required|string' : '',
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        if (!$this->validateTurnstileIfEnabled($request->input('cf-turnstile-response'))) {
+        if (! $this->validateTurnstileIfEnabled($request->input('cf-turnstile-response'))) {
             return back()->withErrors(['captcha' => 'Captcha validation failed.'])->withInput();
         }
 
@@ -228,14 +217,14 @@ class AuthController extends Controller
             'token' => 'required',
             'email' => 'required|email',
             'password' => 'required|min:6|confirmed',
-            'cf-turnstile-response' => env('TURNSTILE_ENABLED', false) ? 'required|string' : '',
+            'cf-turnstile-response' => $this->isTurnstileEnabled() ? 'required|string' : '',
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        if (!$this->validateTurnstileIfEnabled($request->input('cf-turnstile-response'))) {
+        if (! $this->validateTurnstileIfEnabled($request->input('cf-turnstile-response'))) {
             return back()->withErrors(['captcha' => 'Captcha validation failed.'])->withInput();
         }
 
@@ -243,7 +232,7 @@ class AuthController extends Controller
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
                 $user->forceFill(['password' => bcrypt($password)])->save();
-                $apiResponse = Http::post(env('API_BASE_URL').'/api/update-password', [
+                $apiResponse = Http::post(config('app.api_base_url').'/api/update-password', [
                     'username' => $user->name,
                     'password' => $password,
                 ]);
@@ -304,7 +293,7 @@ class AuthController extends Controller
     {
         $token = self::getOrGenerateApiToken();
 
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Failed to authenticate with game server. Please try logging in again.');
         }
 
@@ -320,7 +309,7 @@ class AuthController extends Controller
     {
         $user = User::findOrFail($id);
 
-        if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
             abort(403);
         }
 
@@ -342,6 +331,7 @@ class AuthController extends Controller
         }
 
         $request->user()->sendEmailVerificationNotification();
+
         return back()->with('message', 'Verification link sent!');
     }
 
@@ -355,101 +345,20 @@ class AuthController extends Controller
         return $response->successful() && $response->json()['success'] === true;
     }
 
-    private function authenticateWithApiLogin($username, $password)
-    {
-        try {
-            $apiUrl = env('API_BASE_URL', 'http://127.0.0.1:8080');
-            \Log::info("API login attempt for user: {$username} to {$apiUrl}/api/auth");
-            
-            $response = Http::timeout(10)->post($apiUrl.'/api/auth', [
-                'username' => $username,
-                'password' => $password,
-            ]);
-            
-            if ($response->successful()) {
-                $data = $response->json();
-                \Log::info("API login successful for user: {$username}");
-                return $data['token'] ?? null;
-            }
-
-            \Log::warning("API login failed for user: {$username}, status: {$response->status()}, body: {$response->body()}");
-            return null;
-        } catch (\Exception $e) {
-            \Log::error("API login error for user {$username}: " . $e->getMessage());
-            return null;
-        }
-    }
-
-    private function authenticateWithApiRegister($username, $password, $email = null, $countryCode = null)
-    {
-        try {
-            $apiUrl = env('API_BASE_URL', 'http://127.0.0.1:8080');
-            \Log::info("API register attempt for user: {$username} to {$apiUrl}/api/register");
-            
-            $response = Http::timeout(10)->post($apiUrl.'/api/register', [
-                'username' => $username,
-                'password' => $password,
-                'email' => $email,
-                'countryCode' => $countryCode,
-            ]);
-            
-            if ($response->successful()) {
-                $data = $response->json();
-                \Log::info("API register successful for user: {$username}");
-                return $data['token'] ?? null;
-            }
-
-            \Log::warning("API register failed for user: {$username}, status: {$response->status()}, body: {$response->body()}");
-            return null;
-        } catch (\Exception $e) {
-            \Log::error("API register error for user {$username}: " . $e->getMessage());
-            return null;
-        }
-    }
-
-    private function getCountryCodeFromIp($ip)
-    {
-        if (in_array($ip, ['127.0.0.1', '::1', 'localhost'])) {
-            return null;
-        }
-
-        $cacheKey = 'country_code_' . md5($ip);
-
-        return Cache::remember($cacheKey, 3600, function() use ($ip) {
-            return $this->fetchCountryCodeFromApi($ip);
-        });
-    }
-
-    private function fetchCountryCodeFromApi($ip)
-    {
-        try {
-            $response = Http::timeout(2)->get("http://ip-api.com/json/{$ip}?fields=countryCode");
-
-            if ($response->successful()) {
-                $data = $response->json();
-                return $data['countryCode'] ?? null;
-            }
-        } catch (\Exception $e) {
-            \Log::debug("Failed to get country code for IP {$ip}: " . $e->getMessage());
-        }
-
-        return null;
-    }
-
     private function updateGameServerUserInfo($username, $email, $countryCode = null)
     {
         try {
-            $response = Http::timeout(5)->post(env('API_BASE_URL').'/api/update-user-info', [
+            $response = Http::timeout(5)->post(config('app.api_base_url').'/api/update-user-info', [
                 'username' => $username,
                 'email' => $email,
                 'countryCode' => $countryCode,
             ]);
 
-            if (!$response->successful()) {
-                \Log::warning("Failed to update game server user info for {$username}: " . $response->body());
+            if (! $response->successful()) {
+                \Log::warning("Failed to update game server user info for {$username}: ".$response->body());
             }
         } catch (\Exception $e) {
-            \Log::error("Error updating game server user info for {$username}: " . $e->getMessage());
+            \Log::error("Error updating game server user info for {$username}: ".$e->getMessage());
         }
     }
 
@@ -457,7 +366,7 @@ class AuthController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return null;
         }
 
@@ -467,7 +376,8 @@ class AuthController extends Controller
             return $token;
         }
 
-        \Log::warning('No API token in session for user: ' . $user->name);
+        \Log::warning('No API token in session for user: '.$user->name);
+
         return null;
     }
 }

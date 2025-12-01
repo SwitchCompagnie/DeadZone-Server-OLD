@@ -42,7 +42,7 @@ class BroadcastMaintenanceMessage extends Command
             $broadcastMessage = "MAINTENANCE: {$message} ETA: {$eta}";
 
             // Send the broadcast
-            $response = Http::timeout(5)->post(env('API_BASE_URL') . '/api/broadcast/send', [
+            $response = Http::timeout(5)->post(config('app.api_base_url') . '/api/broadcast/send', [
                 'protocol' => 'warn',
                 'arguments' => [$broadcastMessage],
             ]);

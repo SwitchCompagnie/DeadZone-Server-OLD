@@ -4,7 +4,7 @@
 
 <script type="text/javascript">
     window.gameToken = "{{ $token ?? '' }}";
-    window.API_BASE_URL = "{{ config('app.api_base_url', env('API_BASE_URL', 'http://127.0.0.1:8080')) }}";
+    window.API_BASE_URL = "{{ config('app.api_base_url') }}";
 </script>
 
 @section('content')

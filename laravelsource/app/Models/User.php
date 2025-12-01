@@ -21,6 +21,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'auth_token',
         'email_verification_code',
         'email_verification_code_expires_at',
+        'facebook_id',
         'discord_id',
         'twitter_id',
         'github_id',

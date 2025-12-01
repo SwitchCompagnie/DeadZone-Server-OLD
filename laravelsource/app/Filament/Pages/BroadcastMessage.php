@@ -62,7 +62,7 @@ class BroadcastMessage extends Page implements HasForms
         $data = $this->form->getState();
 
         try {
-            $response = Http::timeout(10)->post(env('API_BASE_URL') . '/api/broadcast/send', [
+            $response = Http::timeout(10)->post(config('app.api_base_url') . '/api/broadcast/send', [
                 'protocol' => $data['protocol'],
                 'arguments' => [$data['message']],
             ]);

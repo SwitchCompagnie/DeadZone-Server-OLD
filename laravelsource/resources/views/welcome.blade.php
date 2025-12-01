@@ -36,17 +36,17 @@
     <!-- Auth Form Container -->
     <div class="form-container p-10 rounded-2xl w-full max-w-lg mx-4 relative z-10" x-data="{ isLogin: true }">
         <!-- Toggle Tabs -->
-        <div class="flex mb-8 relative z-10">
+        <div class="flex gap-3 mb-8 relative z-10">
             <button type="button" 
                 @click="isLogin = true" 
                 :class="isLogin ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-gray-600 hover:border-red-500/50 hover:text-gray-300'"
-                class="flex-1 py-3 px-4 font-bold uppercase tracking-wider text-sm rounded-l-lg border transition-all duration-300">
+                class="flex-1 py-3 px-4 font-bold uppercase tracking-wider text-sm rounded-lg border transition-all duration-300">
                 <i class="fa-solid fa-right-to-bracket mr-2"></i>Login
             </button>
             <button type="button" 
                 @click="isLogin = false" 
                 :class="!isLogin ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-gray-400 border-gray-600 hover:border-red-500/50 hover:text-gray-300'"
-                class="flex-1 py-3 px-4 font-bold uppercase tracking-wider text-sm rounded-r-lg border transition-all duration-300">
+                class="flex-1 py-3 px-4 font-bold uppercase tracking-wider text-sm rounded-lg border transition-all duration-300">
                 <i class="fa-solid fa-user-plus mr-2"></i>Register
             </button>
         </div>
@@ -80,7 +80,7 @@
                     <span>Username</span>
                 </label>
                 <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <div class="absolute top-0 left-0 h-[54px] pl-4 flex items-center pointer-events-none">
                         <i class="fa-solid fa-user text-gray-500 text-sm"></i>
                     </div>
                     <input type="text" id="login-username" name="username" value="{{ old('username') }}" required
@@ -102,7 +102,7 @@
                     <span>Password</span>
                 </label>
                 <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <div class="absolute top-0 left-0 h-[54px] pl-4 flex items-center pointer-events-none">
                         <i class="fa-solid fa-lock text-gray-500 text-sm"></i>
                     </div>
                     <input type="password" id="login-password" name="password" required
@@ -173,7 +173,7 @@
                     <span>Username</span>
                 </label>
                 <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <div class="absolute top-0 left-0 h-[54px] pl-4 flex items-center pointer-events-none">
                         <i class="fa-solid fa-user text-gray-500 text-sm"></i>
                     </div>
                     <input type="text" id="register-username" name="username" value="{{ old('username') }}" required
@@ -195,7 +195,7 @@
                     <span>Email Address</span>
                 </label>
                 <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <div class="absolute top-0 left-0 h-[54px] pl-4 flex items-center pointer-events-none">
                         <i class="fa-solid fa-envelope text-gray-500 text-sm"></i>
                     </div>
                     <input type="email" id="register-email" name="email" value="{{ old('email') }}" required
@@ -217,7 +217,7 @@
                     <span>Password</span>
                 </label>
                 <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <div class="absolute top-0 left-0 h-[54px] pl-4 flex items-center pointer-events-none">
                         <i class="fa-solid fa-lock text-gray-500 text-sm"></i>
                     </div>
                     <input type="password" id="register-password" name="password" required
@@ -272,8 +272,11 @@
         </div>
 
         <!-- Social Buttons -->
-        <div class="grid grid-cols-3 mt-6 gap-3 relative z-10">
+        <div class="grid grid-cols-4 mt-6 gap-3 relative z-10">
             @if(isset($maintenanceMode) && $maintenanceMode)
+                <button disabled class="social-btn flex items-center justify-center gap-2 bg-[#1877F2] opacity-50 cursor-not-allowed text-white font-semibold py-3.5 px-4 rounded-lg">
+                    <i class="fab fa-facebook text-lg"></i>
+                </button>
                 <button disabled class="social-btn flex items-center justify-center gap-2 bg-[#5865F2] opacity-50 cursor-not-allowed text-white font-semibold py-3.5 px-4 rounded-lg">
                     <i class="fab fa-discord text-lg"></i>
                 </button>
@@ -284,6 +287,9 @@
                     <i class="fab fa-github text-lg"></i>
                 </button>
             @else
+                <a href="{{ route('auth.social', 'facebook') }}" class="social-btn flex items-center justify-center gap-2 bg-[#1877F2] hover:bg-[#166FE5] text-white font-semibold py-3.5 px-4 rounded-lg relative z-10" title="Login with Facebook">
+                    <i class="fab fa-facebook text-xl"></i>
+                </a>
                 <a href="{{ route('auth.social', 'discord') }}" class="social-btn flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold py-3.5 px-4 rounded-lg relative z-10" title="Login with Discord">
                     <i class="fab fa-discord text-xl"></i>
                 </a>

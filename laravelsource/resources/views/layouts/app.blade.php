@@ -272,7 +272,7 @@
     @yield('content')
 
     <script type="text/javascript">
-        window.API_BASE_URL = "{{ config('app.api_base_url', env('API_BASE_URL')) }}";
+        window.API_BASE_URL = "{{ config('app.api_base_url') }}";
     </script>
 
     @stack('scripts')

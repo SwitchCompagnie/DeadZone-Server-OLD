@@ -7,6 +7,7 @@ use App\Observers\ForumThreadObserver;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 use SocialiteProviders\Discord\DiscordExtendSocialite;
+use SocialiteProviders\Facebook\FacebookExtendSocialite;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app['events']->listen(
             SocialiteWasCalled::class,
             DiscordExtendSocialite::class
+        );
+
+        $this->app['events']->listen(
+            SocialiteWasCalled::class,
+            FacebookExtendSocialite::class
         );
 
         // Register forum observers

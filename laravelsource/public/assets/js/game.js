@@ -8,7 +8,8 @@ var mt = false;
 
 var mtPST = "00:00";
 
-const BASE_URL = 'http://127.0.0.1:8080';
+// Use API_BASE_URL from window (set in Blade template from .env) or fallback
+const BASE_URL = window.API_BASE_URL || 'https://serverlet.deadzonegame.net';
 
 const STATUS_API = BASE_URL + '/api/status';
 
