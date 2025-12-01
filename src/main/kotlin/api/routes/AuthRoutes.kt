@@ -90,6 +90,49 @@ fun Route.authRoutes(serverContext: ServerContext) {
         }
     }
 
+    post("/api/social-auth") {
+        val data = call.receive<Map<String, String?>>()
+        val username = data["username"]
+        val email = data["email"]
+        val countryCode = data["countryCode"]
+
+        if (username.isNullOrBlank()) {
+            call.respond(HttpStatusCode.BadRequest, mapOf("reason" to "Missing username"))
+            return@post
+        }
+
+        try {
+            val exists = serverContext.authProvider.doesUserExist(username)
+            
+            val session = if (exists) {
+                val playerId = serverContext.playerAccountRepository.getPlayerIdOfUsername(username).getOrNull()
+                if (playerId != null) {
+                    serverContext.sessionManager.create(playerId)
+                } else {
+                    Logger.error { "Failed to get player ID for existing user: $username" }
+                    null
+                }
+            } else {
+                val randomPassword = java.util.UUID.randomUUID().toString()
+                try {
+                    serverContext.authProvider.register(username, randomPassword, email, countryCode)
+                } catch (e: Exception) {
+                    Logger.error { "Social registration failed for $username: ${e.message}" }
+                    null
+                }
+            }
+
+            if (session != null) {
+                call.respond(HttpStatusCode.OK, mapOf("playerId" to session.playerId, "token" to session.token, "isNew" to (!exists).toString()))
+            } else {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("reason" to "Failed to create session"))
+            }
+        } catch (e: Exception) {
+            Logger.error { "Social auth failed for $username: ${e.message}" }
+            call.respond(HttpStatusCode.InternalServerError, mapOf("reason" to "Authentication failed"))
+        }
+    }
+
     get("/api/userexist") {
         val username = call.parameters["username"]
         if (username.isNullOrBlank()) {
