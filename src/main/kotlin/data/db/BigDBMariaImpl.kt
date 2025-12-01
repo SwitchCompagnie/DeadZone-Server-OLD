@@ -1,6 +1,6 @@
 package data.db
 
-import com.toxicbakery.bcrypt.Bcrypt
+import common.PasswordUtils
 import data.collection.*
 import io.ktor.util.date.*
 import kotlinx.coroutines.CoroutineScope
@@ -533,9 +533,8 @@ class BigDBMariaImpl(val database: Database) : BigDB {
         it[PlayerAccounts.schematics] = Base64.encode(inv.schematics)
     }
 
-    @OptIn(ExperimentalEncodingApi::class)
     private fun hashPw(password: String): String {
-        return Base64.encode(Bcrypt.hash(password, 10))
+        return PasswordUtils.hashPassword(password)
     }
 
     override suspend fun loadPayVault(playerId: String): PayVaultData? {

@@ -1,6 +1,9 @@
 package common
 
+import com.toxicbakery.bcrypt.Bcrypt
 import java.util.UUID as JavaUUID
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 /**
  * Ansi colors (256) constants to style console.
@@ -95,5 +98,18 @@ object Time {
      */
     fun now(): Double {
         return io.ktor.util.date.getTimeMillis().toDouble()
+    }
+}
+
+/**
+ * Password hashing utilities using BCrypt
+ */
+object PasswordUtils {
+    /**
+     * Hash a password using BCrypt with cost factor 10 and return as Base64-encoded string.
+     */
+    @OptIn(ExperimentalEncodingApi::class)
+    fun hashPassword(password: String): String {
+        return Base64.encode(Bcrypt.hash(password, 10))
     }
 }

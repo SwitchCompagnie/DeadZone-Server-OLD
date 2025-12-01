@@ -1,5 +1,6 @@
 package api.routes
 
+import common.PasswordUtils
 import context.ServerContext
 import common.Logger
 import io.ktor.http.*
@@ -141,6 +142,34 @@ fun Route.authRoutes(serverContext: ServerContext) {
         } catch (e: Exception) {
             Logger.error { "Update failed for $username: ${e.message}" }
             call.respond(HttpStatusCode.InternalServerError, mapOf("reason" to "Update failed"))
+        }
+    }
+
+    post("/api/update-password") {
+        val data = call.receive<Map<String, String?>>()
+        val username = data["username"]
+        val password = data["password"]
+
+        if (username.isNullOrBlank() || password.isNullOrBlank()) {
+            call.respond(HttpStatusCode.BadRequest, mapOf("reason" to "Missing username or password"))
+            return@post
+        }
+
+        try {
+            val userDoc = serverContext.playerAccountRepository.getUserDocByUsername(username).getOrNull()
+            if (userDoc == null) {
+                call.respond(HttpStatusCode.NotFound, mapOf("reason" to "User not found"))
+                return@post
+            }
+
+            val hashedPassword = PasswordUtils.hashPassword(password)
+            val updatedAccount = userDoc.copy(hashedPassword = hashedPassword)
+
+            serverContext.playerAccountRepository.updatePlayerAccount(userDoc.playerId, updatedAccount).getOrThrow()
+            call.respond(HttpStatusCode.OK, mapOf("success" to "true"))
+        } catch (e: Exception) {
+            Logger.error { "Password update failed for $username: ${e.message}" }
+            call.respond(HttpStatusCode.InternalServerError, mapOf("reason" to "Password update failed"))
         }
     }
 }
