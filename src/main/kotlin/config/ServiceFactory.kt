@@ -3,6 +3,7 @@ package config
 import context.PlayerContextTracker
 import context.ServerConfig
 import context.ServerContext
+import core.playersummary.PlayerSummaryService
 import data.db.BigDBMariaImpl
 import org.jetbrains.exposed.sql.Database
 import server.core.OnlinePlayerRegistry
@@ -61,6 +62,7 @@ object ServiceFactory {
         val taskDispatcher = ServerTaskDispatcher()
         val playerContextTracker = PlayerContextTracker()
         val saveHandlers = createSaveHandlers()
+        val playerSummaryService = PlayerSummaryService(database)
 
         val serverConfig = ServerConfig(
             useMaria = true,
@@ -87,7 +89,8 @@ object ServiceFactory {
             taskDispatcher = taskDispatcher,
             playerContextTracker = playerContextTracker,
             saveHandlers = saveHandlers,
-            config = serverConfig
+            config = serverConfig,
+            playerSummaryService = playerSummaryService
         )
     }
 

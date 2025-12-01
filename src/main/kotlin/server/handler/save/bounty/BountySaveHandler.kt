@@ -270,10 +270,14 @@ class BountySaveHandler : SaveSubHandler {
                     if (targetPlayerObjects != null) {
                         val currentBountyCap = targetPlayerObjects.bountyCap
                         val newBountyCap = currentBountyCap + amount
+                        val bountyDate = System.currentTimeMillis()
                         
                         // Update target player's bounty cap
                         val updatedPlayerObjects = targetPlayerObjects.copy(bountyCap = newBountyCap)
                         serverContext.db.updatePlayerObjectsJson(userId, updatedPlayerObjects)
+                        
+                        // Update PlayerSummary for target player
+                        serverContext.playerSummaryService.updateBounty(userId, newBountyCap, bountyDate)
                         
                         Logger.info(LogConfigSocketToClient) { 
                             "Added bounty of $amount to player $userId (new total: $newBountyCap)" 

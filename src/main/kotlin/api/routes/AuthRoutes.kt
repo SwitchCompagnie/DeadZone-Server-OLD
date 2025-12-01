@@ -16,7 +16,12 @@ fun Route.authRoutes(serverContext: ServerContext) {
         val password = data["password"]
 
         if (username.isNullOrBlank() || password.isNullOrBlank()) {
-            call.respond(HttpStatusCode.BadRequest, mapOf("reason" to "Missing credentials"))
+            call.respond(HttpStatusCode.BadRequest, mapOf("reason" to "Missing username or password"))
+            return@post
+        }
+
+        if (!serverContext.authProvider.doesUserExist(username)) {
+            call.respond(HttpStatusCode.Unauthorized, mapOf("reason" to "Invalid username or password"))
             return@post
         }
 
@@ -24,7 +29,7 @@ fun Route.authRoutes(serverContext: ServerContext) {
         if (session != null) {
             call.respond(HttpStatusCode.OK, mapOf("playerId" to session.playerId, "token" to session.token))
         } else {
-            call.respond(HttpStatusCode.Unauthorized, mapOf("reason" to "Invalid credentials"))
+            call.respond(HttpStatusCode.Unauthorized, mapOf("reason" to "Invalid username or password"))
         }
     }
 
@@ -36,7 +41,7 @@ fun Route.authRoutes(serverContext: ServerContext) {
         val countryCode = data["countryCode"]
 
         if (username.isNullOrBlank() || password.isNullOrBlank()) {
-            call.respond(HttpStatusCode.BadRequest, mapOf("reason" to "Missing credentials"))
+            call.respond(HttpStatusCode.BadRequest, mapOf("reason" to "Missing username or password"))
             return@post
         }
 
@@ -49,7 +54,7 @@ fun Route.authRoutes(serverContext: ServerContext) {
             val session = serverContext.authProvider.register(username, password, email, countryCode)
             call.respond(HttpStatusCode.Created, mapOf("playerId" to session.playerId, "token" to session.token))
         } catch (e: Exception) {
-            Logger.error { "Registration failed for $username: ${e.message}" }
+            Logger.error { "Registration failed: ${e.message}" }
             call.respond(HttpStatusCode.InternalServerError, mapOf("reason" to "Registration failed"))
         }
     }
@@ -62,7 +67,7 @@ fun Route.authRoutes(serverContext: ServerContext) {
         val countryCode = data["countryCode"]
 
         if (username.isNullOrBlank() || password.isNullOrBlank()) {
-            call.respond(HttpStatusCode.BadRequest, mapOf("reason" to "Missing credentials"))
+            call.respond(HttpStatusCode.BadRequest, mapOf("reason" to "Missing username or password"))
             return@post
         }
 
@@ -73,7 +78,7 @@ fun Route.authRoutes(serverContext: ServerContext) {
             try {
                 serverContext.authProvider.register(username, password, email, countryCode)
             } catch (e: Exception) {
-                Logger.error { "Auto-registration failed for $username: ${e.message}" }
+                Logger.error { "Auto-registration failed: ${e.message}" }
                 null
             }
         }
@@ -81,7 +86,7 @@ fun Route.authRoutes(serverContext: ServerContext) {
         if (session != null) {
             call.respond(HttpStatusCode.OK, mapOf("playerId" to session.playerId, "token" to session.token, "isNew" to (!exists).toString()))
         } else {
-            call.respond(HttpStatusCode.Unauthorized, mapOf("reason" to "Invalid credentials"))
+            call.respond(HttpStatusCode.Unauthorized, mapOf("reason" to "Invalid username or password"))
         }
     }
 

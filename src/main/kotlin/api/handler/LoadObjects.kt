@@ -7,6 +7,7 @@ import api.protocol.pioFraming
 import context.ServerContext
 import context.getPlayerContextOrNull
 import data.collection.NeighborHistory
+import data.collection.PlayerStates
 import dev.deadzone.core.LazyDataUpdater
 import common.LogConfigAPIError
 import common.LogConfigSocketToClient
@@ -76,6 +77,12 @@ suspend fun RoutingContext.loadObjects(serverContext: ServerContext) {
             Logger.debug { "LoadObjects: Processing ${objId.table} for $playerId" }
             val obj: BigDBObject? = try {
                 when (objId.table) {
+                    "PlayerSummary" -> {
+                        // Load PlayerSummary from PlayerSummaryService
+                        val summary = serverContext.playerSummaryService.getOrCreate(playerId)
+                        api.bigdb.BigDBConverter.toBigDBObject(key = playerId, obj = summary)
+                    }
+                    
                     "PlayerObjects" -> {
                         val updatedBuildings = LazyDataUpdater.removeBuildingTimerIfDone(playerObjects.buildings)
                         val updatedResources = LazyDataUpdater.depleteResources(lastLogin, playerObjects.resources)
@@ -124,6 +131,20 @@ suspend fun RoutingContext.loadObjects(serverContext: ServerContext) {
                             Logger.debug { "LoadObjects: Inventory is null for $playerId" }
                             null
                         }
+                    }
+
+                    "PlayerStates" -> {
+                        // Create PlayerStates with current online status
+                        val isOnline = serverContext.onlinePlayerRegistry.isOnline(playerId)
+                        val playerStates = PlayerStates(
+                            key = playerId,
+                            online = isOnline,
+                            onlineTimestamp = if (isOnline) System.currentTimeMillis() else 0,
+                            underAttack = false,
+                            protected = false,
+                            banned = false
+                        )
+                        LoadObjectsOutput.fromData(playerStates, key = playerId)
                     }
 
                     else -> {

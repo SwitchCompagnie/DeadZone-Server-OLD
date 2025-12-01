@@ -1,5 +1,6 @@
 package api.handler
 
+import api.bigdb.BigDBConverter
 import api.message.db.LoadIndexRangeArgs
 import api.message.db.LoadObjectsOutput
 import api.protocol.pioFraming
@@ -15,6 +16,8 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
+import common.Logger
+import common.LogConfigAPIError
 
 @OptIn(ExperimentalSerializationApi::class)
 suspend fun RoutingContext.loadIndexRange(serverContext: ServerContext) {
@@ -34,10 +37,30 @@ suspend fun RoutingContext.loadIndexRange(serverContext: ServerContext) {
 
     logInput(args, disableLogging = true)
 
-    // For LoadIndexRange, return empty results as this game doesn't use range queries
-    // In a full implementation, would query database for objects within the index range
-    // and apply pagination using startIndexValue, stopIndexValue, and limit
-    val objects = emptyList<api.message.db.BigDBObject>()
+    val objects = when (args.table) {
+        "PlayerSummary" -> {
+            // Query PlayerSummary data from PlayerSummaryService
+            Logger.info { "Loading PlayerSummary with index: ${args.index}, limit: ${args.limit}" }
+            
+            val summaries = serverContext.playerSummaryService.queryByIndex(
+                indexName = args.index,
+                startValue = null,  // We'll use simple sorting instead of range filtering
+                stopValue = null,
+                limit = args.limit
+            )
+            
+            Logger.info { "Found ${summaries.size} PlayerSummary records" }
+            
+            // Convert PlayerSummary objects to BigDB objects
+            summaries.map { summary ->
+                BigDBConverter.toBigDBObject(key = summary.key, obj = summary)
+            }
+        }
+        else -> {
+            Logger.warn(LogConfigAPIError) { "Unimplemented table for LoadIndexRange: ${args.table}" }
+            emptyList()
+        }
+    }
 
     val outputBytes = try {
         ProtoBuf.encodeToByteArray(

@@ -25,7 +25,7 @@ class SessionManager {
     }
 
     fun refresh(token: String): Boolean {
-        return true
+        return verify(token)
     }
 
     fun getPlayerId(token: String): String? {

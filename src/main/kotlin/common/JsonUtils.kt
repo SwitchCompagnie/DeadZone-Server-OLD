@@ -120,6 +120,10 @@ fun Any?.toJsonValue(): JsonElement = when (this) {
     is String -> JsonPrimitive(this)
     is Number -> JsonPrimitive(this)
     is Boolean -> JsonPrimitive(this)
+    is UInt -> JsonPrimitive(this.toLong())
+    is ULong -> if (this <= Long.MAX_VALUE.toULong()) JsonPrimitive(this.toLong()) else JsonPrimitive(this.toString())
+    is UShort -> JsonPrimitive(this.toInt())
+    is UByte -> JsonPrimitive(this.toInt())
     is Map<*, *> -> {
         // Keys must be strings for JSON
         (this as? Map<String, *>)?.toJsonElement()

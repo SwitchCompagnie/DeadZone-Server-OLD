@@ -1,5 +1,6 @@
 package context
 
+import core.playersummary.PlayerSummaryService
 import data.db.BigDB
 import server.core.OnlinePlayerRegistry
 import server.handler.save.SaveSubHandler
@@ -18,6 +19,7 @@ data class ServerContext(
     val playerContextTracker: PlayerContextTracker,
     val saveHandlers: List<SaveSubHandler>,
     val config: ServerConfig,
+    val playerSummaryService: PlayerSummaryService,
 )
 
 fun ServerContext.getPlayerContextOrNull(playerId: String): PlayerContext? =
