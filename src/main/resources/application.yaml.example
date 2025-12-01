@@ -26,7 +26,6 @@ maria:
 game:
   host: "127.0.0.1"
   port: 7777
-  enableAdmin: false
 
 # Broadcast
 broadcast:
