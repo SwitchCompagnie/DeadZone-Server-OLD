@@ -2,7 +2,7 @@
 
 # 🎮 Recapturing The DeadZone
 
-**Un serveur privé pour The Last Stand: Dead Zone**
+**A private server for The Last Stand: Dead Zone**
 
 [![Discord](https://img.shields.io/discord/YOUR_DISCORD_ID?color=7289da&logo=discord&logoColor=white)](https://discord.gg/jFyAePxDBJ)
 [![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://www.oracle.com/java/technologies/downloads)
@@ -10,42 +10,50 @@
 [![MariaDB](https://img.shields.io/badge/MariaDB-11+-blue.svg)](https://mariadb.org/)
 
 </div>
+<div align="center">
+
+[![en](https://img.shields.io/badge/lang-en-red.svg)](./README.md)
+[![fr](https://img.shields.io/badge/lang-fr-yellow.svg)](./README.fr.md)
+[![pt-br](https://img.shields.io/badge/lang-pt--br-green.svg)](./README.pt-br.md)
+
+</div>
+
 
 ---
 
-## 📖 À propos
+## 📖 About
 
-Recapturing The DeadZone est un projet de renaissance communautaire pour **The Last Stand: Dead Zone**. Ce serveur privé permet aux joueurs de revivre l'expérience du jeu original avec une infrastructure moderne développée en Kotlin.
+Recapturing The DeadZone is a community revival project for The Last Stand: Dead Zone. This private server allows players to relive the original game experience with a modern infrastructure developed in Kotlin.
 
-> **⚠️ Note:** Il s’agit d’un projet non officiel. Tous les droits de The Last Stand: Dead Zone sont la propriété exclusive de Con Artist Games, qui nous a accordé leur autorisation pour ce projet.
+> **⚠️ Note:** Note: This is an unofficial project. All rights to The Last Stand: Dead Zone are the exclusive property of Con Artist Games, who has granted us permission for this project.
 
-> 📚 Voir [ARCHITECTURE.md](./ARCHITECTURE.md) pour plus de détails
+> 📚 See [ARCHITECTURE.md](./ARCHITECTURE.md) for more details.
 
-## 📋 Prérequis
+## 📋 Prerequisites
 
-- **Java 25** ou supérieur - [Télécharger](https://www.oracle.com/java/technologies/downloads)
-- **MariaDB 11+** - [Guide d'installation](https://mariadb.org/download/)
-- **Gradle** (inclus via wrapper)
+- **Java 25** or higher - [Download](https://www.oracle.com/java/technologies/downloads)
+- **MariaDB 11+** - [Installation Guide](https://mariadb.org/download/)
+- **Gradle** (included via wrapper)
 
 ## 🚀 Installation
 
-### 1. Configurer la base de données
+### 1. Configure the database
 
 ```sql
 CREATE DATABASE prod_deadzone_game;
 ```
 
-Les tables seront automatiquement créées au premier démarrage du serveur.
+The tables will be automatically created when the server is started for the first time.
 
-### 2. Configuration
+### 2. Server Configuration
 
-Créer le fichier `src/main/resources/application.yaml` à partir du template:
+Create the file `src/main/resources/application.yaml` from the template:
 
 ```bash
 cp src/main/resources/application.yaml.example src/main/resources/application.yaml
 ```
 
-Puis modifier avec vos paramètres:
+Then modify with your settings:
 
 ```yaml
 maria:
@@ -58,9 +66,9 @@ game:
   port: 7777
 ```
 
-> **Note:** Le fichier `application.yaml` contient des informations sensibles et ne doit pas être committé. Il est ignoré par `.gitignore`.
+> **Note:** The `application.yaml` file contains sensitive information and should not be committed. It is ignored by `.gitignore`.
 
-### 3. Compiler le projet
+### 3. Compile the project
 
 **Windows:**
 ```bash
@@ -73,9 +81,9 @@ chmod +x build.sh
 ./build.sh
 ```
 
-### 4. Démarrer le serveur
+### 4. Start the server
 
-**Mode production (depuis le dossier `deploy`):**
+**Production mode (from the `deploy` folder):**
 ```bash
 # Windows
 autorun.bat
@@ -84,86 +92,90 @@ autorun.bat
 ./autorun.sh
 ```
 
-**Mode développement:**
+**Development mode:**
 ```bash
 ./gradlew run
 ```
 
-Le serveur sera accessible sur :
-- **API HTTP:** `http://127.0.0.1:8080`
-- **Socket Game:** `127.0.0.1:7777`
+The server will be accessible at:
+- **HTTP API:** `http://127.0.0.1:8080`
+- **Game Socket:** `127.0.0.1:7777`
 - **Broadcast:** Ports `2121-2123`
-- **Policy Flash:** Port `843`
+- **Flash Policy:** Port `843`
 
-## 🔧 Stack technique
+### 5. (Optional) Open the Game
 
-- **Langage:** Kotlin 2.0.21
+If needed, you can use the [Deadzone Dev Launcher](https://github.com/victorgrodriguesm7/deadzone-dev-launcher) to access the game locally.
+
+## 🔧 Technical stack
+
+- **Language:** Kotlin 2.0.21
 - **Framework:** Ktor (WebSockets + REST API)
-- **Base de données:** MariaDB + Exposed ORM
-- **Sérialisation:** kotlinx.serialization (JSON + ProtoBuf)
+- **Database:** MariaDB + Exposed ORM
+- **Serialization:** kotlinx.serialization (JSON + ProtoBuf)
 - **Build:** Gradle 8.14
 - **Architecture:** Clean Architecture + Factory Pattern
 
-## 🤝 Contribuer
+## 🤝 Contribute
 
-Les contributions sont les bienvenues! Voici comment participer:
+Contributions are welcome! Here's how to participate:
 
-1. **Fork** le projet
-2. **Créer** une branche pour votre fonctionnalité
-   ```bash
-   git checkout -b feature/nouvelle-fonctionnalite
+1. **Fork** the project
+2. **Create** a branch for your feature
+```bash
+   git checkout -b feature/new-feature
    ```
-3. **Commit** vos changements
-   ```bash
-   git commit -m "Ajout d'une nouvelle fonctionnalité"
-   ```
-4. **Push** vers votre branche
-   ```bash
-   git push origin feature/nouvelle-fonctionnalite
-   ```
-5. **Ouvrir** une Pull Request
+3. **Commit** your changes
+```bash
+  git commit -m “Adding a new feature”
+  ```
+4. **Push** to your branch
+```bash
+  git push origin feature/new-feature
+  ```
+5. **Open** a Pull Request
 
-### Directives de contribution
+### Contribution guidelines
 
-- Suivre les conventions Kotlin standard
-- Ajouter des commentaires clairs pour les fonctions importantes
-- Tester vos modifications avant de soumettre
-- Documenter les nouvelles fonctionnalités
+- Follow standard Kotlin conventions
+- Add clear comments for important functions
+- Test your changes before submitting
+- Document new features
 
 ## 📚 Documentation
 
-### Architecture du projet
+### Project Architecture
 
-Pour une compréhension approfondie de l'architecture, consultez :
+For an in-depth understanding of the architecture, see:
 
-📖 **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Documentation complète :
-- Structure détaillée du projet
-- Flux de communication client/serveur
-- Composants principaux et services
-- Types de messages (100+ types)
-- Guide de développement
+📖 **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Complete documentation:
+- Detailed project structure
+- Client/server communication flow
+- Main components and services
+- Message types (100+ types)
+- Development guide
 
-### Documentation externe
+### External Documentation
 
-Documentation complète disponible sur notre repository dédié:
+Complete documentation available on our dedicated repository:
 
 🔗 [DeadZone Documentation](https://github.com/glennhenry/DeadZone-Documentation)
 
-## 💬 Communauté
+## 💬 Community
 
-- **Discord:** [Rejoindre le serveur](https://discord.gg/jFyAePxDBJ)
-- **Issues:** [Rapporter un bug](https://github.com/SulivanM/Sandbox-DZ/issues)
-- **Discussions:** Partager vos idées et obtenir de l'aide
+- **Discord:** [Join the server](https://discord.gg/jFyAePxDBJ)
+- **Issues:** [Report a bug](https://github.com/SulivanM/Sandbox-DZ/issues)
+- **Discussions:** Share your ideas and get help
 
-## 📝 Licence
+## 📝 License
 
-Ce projet est un effort de renaissance communautaire. Tous les droits sur The Last Stand: Dead Zone appartiennent à Con Artist Games.
+This project is a community revival effort. All rights to The Last Stand: Dead Zone belong to Con Artist Games.
 
 ---
 
 <div align="center">
 
-Développé avec ❤️ par la communauté DeadZone
+Developed with ❤️ by the DeadZone community
 
 [Discord](https://discord.gg/jFyAePxDBJ) • [Website](https://github.com/SwitchCompagnie/Deadzone-Revive-Website-Game)
 
